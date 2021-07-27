@@ -1,0 +1,96 @@
+import os
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+from tkinter import  *
+import lxml
+url = r'https://www.bilibili.com/v/popular/rank/douga?spm_id_from=333.851.b_62696c695f7265706f72745f646f756761.39'
+headers = {
+       'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36'}
+response = requests.get(url, headers=headers)
+data = response.content.decode('utf-8')
+soup = BeautifulSoup(data, 'lxml')
+   # 获取视频标题：
+otherlink = []
+title = []
+namelist1 = soup.find_all(class_='other-link')
+namelist = soup.find_all(class_='title')
+for i in namelist:
+        p = i.get_text()
+        title.append(p)
+for j in namelist1:
+        p1 = j.get_text()
+        p1 = p1.replace(p1[-12:], '')
+        if p1 in title:
+            title.remove(p1)
+        else:
+            pass
+    # 获取播放量，弹幕数，up名字：
+namelist2 = soup.find_all(class_='data-box')
+all = []
+upname = []
+bofangliang = []
+danmushu = []
+for i in namelist2:
+        p = i.get_text('title')
+        p2 = p.strip()
+        all.append(p2)
+for i in range(0, len(all), 3):
+        bofangliang.append(all[i])
+        danmushu.append(all[i + 1])
+        upname.append(all[i + 2])
+    # 获取排名：
+rank = []
+ranklist = soup.find_all(class_='num')
+for i in ranklist:
+        p = i.get_text()
+        rank.append(p)
+# 获取视屏的综合得分
+score = []
+scorelist = soup.find_all(class_='pts')
+for i in scorelist:
+        pts = i.get_text()
+        pts1 = pts.replace('综合得分', '')
+        pts2 = pts1.strip()
+        score.append(pts2)
+#生成GUI界面：
+
+sb=Tk()
+sb.title('biliblli排行榜爬虫工具--Version1.0  by author:FL4K')
+lb1=Label(sb,text='各大网站排行爬虫器').pack()
+lb2=Label(sb,text='--------陆续开发功能中！------').pack()
+sb.geometry('576x800')
+txt = Text(sb)
+txt.place(rely=0.1, relheight=1)
+def run1():
+    txt.delete('1.0','end') ##表格清空语句！！
+    for i, j, k, l, m, n in zip(title, bofangliang, danmushu, score, upname, rank):
+        p = n+'、'+'视频标题：  ' + i + '---播放量：' + j + '---弹幕：' + k + '---视频得分: ' + l + '---up：' + m + '---排名:' + n + '\n\n'
+        txt.insert(END,p)
+#生成B站排行表格函数：
+def run2():
+    txt.delete('1.0', 'end')
+    videodata = {'视频名字': title,
+                 '播放量': bofangliang,
+                 '弹幕数': danmushu,
+                 '综合得分': score,
+                 'up主名字': upname,
+                 '排名': rank
+                 }
+    videodata=pd.DataFrame(videodata)
+    videodata.to_excel(os.getcwd()+'result.xlsx')
+    txt.insert(END,'已在该目录下建立')
+def qingchu():
+    txt.delete('1.0','end')
+ #按钮设置
+btn1 = Button(sb, text='爬取bilibili排行', command=run1)
+btn1.place(relx=0.14, rely=0.05, relwidth=0.2, relheight=0.05)
+btn2 = Button(sb, text='生成表格', command=run2)
+btn2.place(relx=0.44, rely=0.05, relwidth=0.2, relheight=0.05)
+
+btn3 = Button(sb, text='清除文本框', command=qingchu)
+btn3.place(relx=0.74, rely=0.05, relwidth=0.2, relheight=0.05)
+
+
+sb.mainloop()
+
